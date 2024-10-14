@@ -17,6 +17,7 @@ const HostScreen = () => {
   const [isNextDisabled, setIsNextDisabled] = useState(true);
   const [playerAccessed, setPlayerAccessed] = useState(false);
   const [waitingForPlayer, setWaitingForPlayer] = useState(false);
+  const [playerDisconnected, setPlayerDisconnected] = useState(false);
 
   useEffect(() => {
     // Listen for player accessing the game
@@ -43,6 +44,7 @@ const HostScreen = () => {
       setFeedbackMessage('');
       setFeedbackColor('');
       setIsNextDisabled(true);
+      setPlayerDisconnected(false);
     });
 
     socket.on('moveToNextQuestion', () => {
@@ -73,6 +75,9 @@ const HostScreen = () => {
       setIsNextDisabled(false);
     });
 
+    socket.on('playerDisconnected', () => {
+      setPlayerDisconnected(true);
+    });
 
     return () => {
       socket.off('playerAccessed');
@@ -80,6 +85,7 @@ const HostScreen = () => {
       socket.off('gameStarted');
       socket.off('moveToNextQuestion');
       socket.off('answerResult');
+      socket.off('playerDisconnected');
     };
   }, [currentQuestionIndex, questions]);
 
@@ -98,11 +104,12 @@ const HostScreen = () => {
           </h2>
         ))}
 
-        {gameStarted && (gameFinished ? (
+        {gameStarted && !playerDisconnected && (gameFinished ? (
           <span className="text-sm sm:text-lg md:text-xl mb-4 text-green-500 text-center"><strong>{playerName}</strong> finished the game.</span>
         ) : (
           <span className="text-sm sm:text-lg md:text-xl mb-4 text-green-500 text-center">🎮 Now, <strong>{playerName}</strong> is Playing Game 🎮</span>
         ))}
+
         {!playerAccessed && !gameStarted && (
           <div className="mb-5 flex flex-col items-center w-full">
             <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold mb-6 animate-pulse text-blue-600 text-center">
@@ -114,37 +121,51 @@ const HostScreen = () => {
             <QRCodeCanvas value="https://kbc-style-quizz-game.onrender.com/player" size={256} />
           </div>
         )}
+
         {gameStarted && questions.length > 0 && !gameFinished && (
           <div className="w-full text-center">
             {/* Display feedback message with conditional color */}
             {feedbackMessage && (
               <p className={`mb-4 ${feedbackColor}`} dangerouslySetInnerHTML={{ __html: feedbackMessage }} />
             )}
-            <h2 className="text-xl font-semibold mb-2">Current Question:</h2>
-            <div className="mb-4 bg-white shadow-lg rounded-lg p-4 w-full">
-              <h3 className="font-semibold">{questions[currentQuestionIndex]?.question}</h3>
-              <div className="mt-3 flex flex-col items-center">
-                {questions[currentQuestionIndex]?.options.map((option, i) => {
-                  const isSelected = selectedAnswers[currentQuestionIndex] === option;
-                  return (
-                    <button
-                      key={i}
-                      className={`block w-full mb-2 border p-2 rounded hover:bg-blue-200 ${isSelected ? (option === questions[currentQuestionIndex].correctAnswer ? 'bg-green-300' : 'bg-red-300') : ''}`}
-                    >
-                      {String.fromCharCode(65 + i)}. {option}
-                    </button>
-                  );
-                })}
+
+            {playerDisconnected ? (
+              // Display disconnect message when player is disconnected
+              <div>
+                <p className="text-sm sm:text-lg md:text-xl text-center mt-4 text-red-500">
+                  <strong>{playerName}</strong> has disconnected from the game. <br/> Please restart the game.
+                </p>
               </div>
-              <button
-                className={`w-full bg-blue-500 p-2 rounded ${isNextDisabled ? ' opacity-50 cursor-not-allowed ' : 'opacity-100 '}`}
-                disabled={isNextDisabled}
-              >
-                {currentQuestionIndex === questions.length - 1 ? 'Submit' : 'Next'}
-              </button>
-            </div>
+            ) : (
+              <>
+                <h2 className="text-xl font-semibold mb-2">Current Question:</h2>
+                <div className="mb-4 bg-white shadow-lg rounded-lg p-4 w-full">
+                  <h3 className="font-semibold">{questions[currentQuestionIndex]?.question}</h3>
+                  <div className="mt-3 flex flex-col items-center">
+                    {questions[currentQuestionIndex]?.options.map((option, i) => {
+                      const isSelected = selectedAnswers[currentQuestionIndex] === option;
+                      return (
+                        <button
+                          key={i}
+                          className={`block w-full mb-2 border p-2 rounded hover:bg-blue-200 ${isSelected ? (option === questions[currentQuestionIndex].correctAnswer ? 'bg-green-300' : 'bg-red-300') : ''}`}
+                        >
+                          {String.fromCharCode(65 + i)}. {option}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    className={`w-full bg-blue-500 p-2 rounded ${isNextDisabled ? ' opacity-50 cursor-not-allowed ' : 'opacity-100 '}`}
+                    disabled={isNextDisabled}
+                  >
+                    {currentQuestionIndex === questions.length - 1 ? 'Submit' : 'Next'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
+
         {gameFinished && (
           <div className="w-full text-center mt-2">
             <p>

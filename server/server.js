@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const axios = require('axios')
 
 const app = express();
 const server = http.createServer(app);
@@ -24,41 +25,40 @@ if(process.env.NODE_ENV==="production"){
     res.sendFile(path.join(__dirname1, "client","build","index.html"));
   });
 
-// The "catchall" handler: for any request that doesn't match one above, send back index.html.
 app.get('/player', (req, res) => {
   res.sendFile(path.join(__dirname1, "client","build","index.html"));
 });
 }
 
-// Questions array
-const questions = [
-  {
-    question: '1. What is 2 + 2?',
-    options: ['3', '4', '5', '6'],
-    correctAnswer: '4', // Correct answer
-  },
-  {
-    question: '2. What is the capital of France?',
-    options: ['Paris', 'London', 'Berlin', 'Madrid'],
-    correctAnswer: 'Paris', // Correct answer
-  },
-  {
-    question: '3. Who wrote "Romeo and Juliet"?',
-    options: ['Mark Twain', 'Charles Dickens', 'William Shakespeare', 'Jane Austen'],
-    correctAnswer: 'William Shakespeare', // Correct answer
-  },
-  {
-    question: '4. What is the largest planet in our Solar System?',
-    options: ['Earth', 'Mars', 'Jupiter', 'Saturn'],
-    correctAnswer: 'Jupiter', // Correct answer
-  },
-  {
-    question: '5. What is the boiling point of water?',
-    options: ['0°C', '50°C', '100°C', '200°C'],
-    correctAnswer: '100°C', // Correct answer
-  },
-  // Add more questions as needed...
-];
+// Function to fetch questions from the API
+async function fetchQuestionsFromAPI() {
+  try {
+    const response = await axios.get('https://opentdb.com/api.php', {
+      params: {
+        amount: 5, // Number of questions
+        category: 18, // Category ID for "Computers" in the API
+        type: 'multiple' // Multiple choice questions
+      }
+    });
+
+    // Format the questions to include options and the correct answer
+    const formattedQuestions = response.data.results.map((questionData, index) => {
+      const allOptions = [...questionData.incorrect_answers, questionData.correct_answer];
+      // Shuffle options
+      const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
+      return {
+        question: `${index + 1}. ${questionData.question}`,
+        options: shuffledOptions,
+        correctAnswer: questionData.correct_answer
+      };
+    });
+
+    return formattedQuestions;
+  } catch (error) {
+    console.error('Error fetching questions from API:', error);
+    return [];
+  }
+}
 
 
 
@@ -72,8 +72,9 @@ io.on('connection', (socket) => {
   });
   
   // Start the game and emit questions to both player and host
-  socket.on('startGame', (name) => {
-    io.emit('gameStarted', { questions, playerName: name });
+  socket.on('startGame', async (name) => {
+    const randomQuestions = await fetchQuestionsFromAPI();
+    io.emit('gameStarted', { questions: randomQuestions, playerName: name });
   });
 
   // Handle the answer from the player
@@ -81,7 +82,6 @@ io.on('connection', (socket) => {
     io.emit('answerResult', data);
   });
 
-  // Handle moving to the next question
   socket.on('moveToNextQuestion', () => {
     socket.broadcast.emit('moveToNextQuestion'); // Emit to all clients except the sender
   });
@@ -90,9 +90,11 @@ io.on('connection', (socket) => {
     io.emit('nextButtonState', false);
 });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
+socket.on('disconnect', () => {
+  console.log(`Player disconnected: ${socket.id}`);
+  // Notify others about the disconnection
+  socket.broadcast.emit('playerDisconnected', socket.id);
+});
 });
 
 // Set the port to 3000

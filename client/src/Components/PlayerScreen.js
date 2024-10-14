@@ -27,7 +27,11 @@ const PlayerScreen = () => {
      // Notify server that a player has accessed the game
     useEffect(() => {
         socket.emit('playerAccessed');
-      }, []);
+
+        return () => {
+            socket.emit('playerDisconnected', playerName);
+        };
+    }, [playerName]);
 
     useEffect(() => {
         socket.on('gameStarted', ({ questions, error }) => {
