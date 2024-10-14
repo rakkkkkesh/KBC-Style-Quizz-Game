@@ -111,7 +111,7 @@ const HostScreen = () => {
             <h2 className="text-sm sm:text-lg md:text-xl font-semibold text-gray-700 mb-6 text-center">
               🎮 Please scan the QR code to participate in the Game 🎮
             </h2>
-            <QRCodeCanvas value="https://kbcgame-68zb.onrender.com/player" size={256} />
+            <QRCodeCanvas value="https://kbc-style-quizz-game.onrender.com/player" size={256} />
           </div>
         )}
         {gameStarted && questions.length > 0 && !gameFinished && (
