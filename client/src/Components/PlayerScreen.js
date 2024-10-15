@@ -15,7 +15,7 @@ const PlayerScreen = () => {
     const [correctCount, setCorrectCount] = useState(0);
     const [playerName, setPlayerName] = useState('');
     const [error, setError] = useState('');
-    const [isNextDisabled, setIsNextDisabled] = useState(true);
+    // const [isNextDisabled, setIsNextDisabled] = useState(true);
 
     const startGame = () => {
         if (name) {
@@ -44,13 +44,15 @@ const PlayerScreen = () => {
                 setFeedback('');
                 setGameOver(false);
                 setCorrectCount(0);
-                setIsNextDisabled(true);
+                // setIsNextDisabled(true);
             }
         });
 
-        socket.on('nextButtonState', (isDisabled) => {
-            setIsNextDisabled(isDisabled);
-        });
+        // Uncomments this code to disable next-submit button, if option is not selected.
+
+        // socket.on('nextButtonState', (isDisabled) => {
+        //     setIsNextDisabled(isDisabled);
+        // });
 
         return () => {
             socket.off('gameStarted');
@@ -83,8 +85,28 @@ const PlayerScreen = () => {
             playerName: name,
         });
 
-        socket.emit('enableNextButton');
-        setIsNextDisabled(false);
+        // Uncomments this code to enable next-submit button, if option is selected.
+        // socket.emit('enableNextButton');
+        // setIsNextDisabled(false); 
+
+        //Start of automatically move to next question.
+        // Comment this code if you don't want to move to next qustion automatically.
+        socket.emit('moveToNextQuestion');
+
+        // Automatically move to the next question after 2 seconds
+        setTimeout(() => {
+            if (currentQuestionIndex < questions.length - 1) {
+                setCurrentQuestionIndex(currentQuestionIndex + 1);
+                setIsCorrect(false);
+                setAnswer('');
+                setFeedback('');
+            } else {
+                setGameOver(true);
+            }   
+        }, 2000);
+
+        //End of automatically move to next question.
+
     };
 
 
@@ -94,28 +116,35 @@ const PlayerScreen = () => {
         }
     };
 
-    const handleNextSubmit = () => {
-        if (!answer) {
-            setFeedback('Please select an answer before proceeding.');
-            return;
-        }
 
-        socket.emit('moveToNextQuestion');
+    //Start of move to next question with next-submit button.
+    // Uncomment this code if you want to move to next qustion using next-submit button.
 
-        if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(currentQuestionIndex + 1);
-            setIsCorrect(false);
-            setAnswer('');
-            setFeedback('');
-            setIsNextDisabled(true);
-        } else {
-            setGameOver(true);
-        }
-    };
+    // const handleNextSubmit = () => {
+    //     if (!answer) {
+    //         setFeedback('Please select an answer before proceeding.');
+    //         return;
+    //     }
+
+    //     socket.emit('moveToNextQuestion');
+
+    //     if (currentQuestionIndex < questions.length - 1) {
+    //         setCurrentQuestionIndex(currentQuestionIndex + 1);
+    //         setIsCorrect(false);
+    //         setAnswer('');
+    //         setFeedback('');
+    //         setIsNextDisabled(true);
+    //     } else {
+    //         setGameOver(true);
+    //     }
+    // };
+
+    //End of move to next question with next-submit button.
+
 
     return (
         <div className="flex justify-center">
-            <div className="flex flex-col justify-center p-5 my-20 mx-20 w-auto bg-gray-100 border rounded-lg shadow-lg sm:p-8 md:p-10">
+            <div className="flex flex-col justify-center p-5 my-20 mx-2 w-full bg-gray-100 border rounded-lg shadow-lg sm:p-8 md:p-10 sm:mx-4 md:mx-6 max-w-screen-sm">
                 <p className="text-3xl sm:text-2xl md:text-4xl font-bold mb-5 text-center">Quizz App</p>
 
                 {!gameStarted ? (
@@ -142,10 +171,10 @@ const PlayerScreen = () => {
                 ) : (
                     <div className="w-full text-center">
                         {gameOver ? (
-                            <div className="w-full text-center mt-2">
+                            <div className="w-full text-center mt-2 sm:mt-4 md:mt-6">
                                 <h2 className="text-sm sm:text-lg md:text-xl mb-4 text-green-500 text-center"><strong>{name}</strong>, Thank you for playing.</h2>
-                                <p>You have attempted {questions.length}/{questions.length} questions.</p>
-                                <p>with <strong>{correctCount}</strong> correct answers.</p>
+                                <p className='text-sm sm:text-base md:text-lg'>You have attempted {questions.length}/{questions.length} questions.</p>
+                                <p className='text-sm sm:text-base md:text-lg'>with <strong>{correctCount}</strong> correct answers.</p>
                             </div>
                         ) : (
                             <>
@@ -162,11 +191,10 @@ const PlayerScreen = () => {
                                 )}
 
                                 {currentQuestionIndex < questions.length && (
-                                    <div className="mb-5 bg-white shadow-lg rounded-lg p-4">
-                                        <h2 className="text-xl font-semibold mb-2">Current Question:</h2>
-
-                                        <h3 className="font-semibold ">{questions[currentQuestionIndex].question}</h3>
-                                        <div className="mt-3 flex flex-col items-center">
+                                    <div className="flex flex-col items-center text-center mb-4 bg-white shadow-lg rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-screen-sm mx-auto">
+                                        <h2 className="text-sm sm:text-xl md:text-xl font-semibold mb-2 text-center">Current Question:</h2>
+                                        <h3 className="font-semibold text-sm sm:text-base md:text-lg text-center">{questions[currentQuestionIndex].question}</h3>
+                                        <div className="mt-3 p-2 flex flex-col items-center w-full sm:mx-5 md:mx-10">
                                             {questions[currentQuestionIndex].options.map((option, index) => {
                                                 const isSelected = answer === option;
                                                 const isAnswerCorrect = isSelected && option === questions[currentQuestionIndex].correctAnswer;
@@ -177,7 +205,7 @@ const PlayerScreen = () => {
                                                     <button
                                                         key={index}
                                                         onClick={() => handleOptionSelect(option)}
-                                                        className={`block w-full mb-2 border p-2 rounded
+                                                        className={`text-center text-sm sm:text-base md:text-lg lg:text-md xl:text-base w-full mb-2 border p-2 rounded hover:bg-blue-200
                                                             ${isAnswerCorrect ? 'bg-green-300' : isAnswerWrong ? 'bg-red-300' : ''}`}
                                                         disabled={!!answer}
                                                     >
@@ -186,14 +214,20 @@ const PlayerScreen = () => {
                                                 );
                                             })}
                                         </div>
-                                        <button
+
+                                        {/* Start of move to next question with next-submit button. */}
+                                        {/* Uncomment this code if you want to move to next questions with next-submit button. */}
+                                        
+                                        {/* <button
                                             onClick={handleNextSubmit}
                                             disabled={isNextDisabled}
-                                            className={`w-full bg-blue-500 text-white p-2 rounded ${answer ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'}`}
+                                            className={`text-center w-full bg-blue-500 text-white p-2 rounded ${answer ? 'hover:bg-blue-700' : 'opacity-50 cursor-not-allowed'}`}
                                         >
                                             {currentQuestionIndex === questions.length - 1 ? 'Submit' : 'Next'}
-                                        </button>
+                                        </button> */}
 
+                                        {/* End of move to next question with next-submit button. */}
+                                        
                                     </div>
                                 )}
                             </>

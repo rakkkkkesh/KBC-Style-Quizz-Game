@@ -14,7 +14,7 @@ const HostScreen = () => {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [feedbackColor, setFeedbackColor] = useState('');
-  const [isNextDisabled, setIsNextDisabled] = useState(true);
+  // const [isNextDisabled, setIsNextDisabled] = useState(true);
   const [playerAccessed, setPlayerAccessed] = useState(false);
   const [waitingForPlayer, setWaitingForPlayer] = useState(false);
   const [playerDisconnected, setPlayerDisconnected] = useState(false);
@@ -43,20 +43,36 @@ const HostScreen = () => {
       setSelectedAnswers({});
       setFeedbackMessage('');
       setFeedbackColor('');
-      setIsNextDisabled(true);
+      // setIsNextDisabled(true);
       setPlayerDisconnected(false);
     });
 
     socket.on('moveToNextQuestion', () => {
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
-        setFeedbackMessage('');
-        setFeedbackColor('');
-        setIsNextDisabled(true)
-      } else {
-        setGameFinished(true);
-      }
+      // Uncomments this code if you want to move to next qustion with next button.
+    //  if (currentQuestionIndex < questions.length - 1) {
+    //     setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
+    //     setFeedbackMessage('');
+    //     setFeedbackColor('');
+    //     setIsNextDisabled(true)
+    //   } else {
+    //     setGameFinished(true);
+    //   }
+
+
+      // And comment this code, if you don't want to move to next qustion automatically.
+      // Automatically move to the next question after 2 seconds
+      setTimeout(() => {
+        if (currentQuestionIndex < questions.length - 1) {
+          setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
+          setFeedbackMessage('');
+          setFeedbackColor('');
+        } else {
+          setGameFinished(true);
+        }
+    }, 2000);
     });
+
+// End of automatically move to next questions
 
     socket.on('answerResult', (data) => {
       const isCorrect = data.selectedAnswer === questions[currentQuestionIndex].correctAnswer;
@@ -72,7 +88,7 @@ const HostScreen = () => {
         ...prev,
         [currentQuestionIndex]: data.selectedAnswer,
       }));
-      setIsNextDisabled(false);
+      // setIsNextDisabled(false);
     });
 
     socket.on('playerDisconnected', () => {
@@ -91,7 +107,7 @@ const HostScreen = () => {
 
   return (
     <div className="flex justify-center">
-      <div className="flex flex-col justify-center p-5 my-20 mx-20 w-auto bg-gray-100 border rounded-lg shadow-lg sm:p-8 md:p-10">
+      <div className="flex flex-col justify-center p-5 my-20 mx-2 w-full bg-gray-100 border rounded-lg shadow-lg sm:p-8 md:p-10 sm:mx-4 md:mx-6 max-w-screen-sm">
         <h1 className="text-3xl sm:text-2xl md:text-4xl font-bold mb-5 text-center">Host Screen</h1>
 
         {waitingForPlayer && !gameStarted && (
@@ -138,28 +154,30 @@ const HostScreen = () => {
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-semibold mb-2">Current Question:</h2>
-                <div className="mb-4 bg-white shadow-lg rounded-lg p-4 w-full">
-                  <h3 className="font-semibold">{questions[currentQuestionIndex]?.question}</h3>
-                  <div className="mt-3 flex flex-col items-center">
+                <div className="flex flex-col items-center text-center mb-4 bg-white shadow-lg rounded-lg p-3 sm:p-4 md:p-6 w-full max-w-screen-sm mx-auto">
+                <h2 className="text-sm sm:text-xl md:text-xl font-semibold mb-2 text-center">Current Question:</h2>
+                  <h3 className="font-semibold text-sm sm:text-base md:text-lg text-center">{questions[currentQuestionIndex]?.question}</h3>
+                  <div className="mt-3 p-2 flex flex-col items-center w-full sm:mx-5 md:mx-10">
                     {questions[currentQuestionIndex]?.options.map((option, i) => {
                       const isSelected = selectedAnswers[currentQuestionIndex] === option;
                       return (
                         <button
                           key={i}
-                          className={`block w-full mb-2 border p-2 rounded hover:bg-blue-200 ${isSelected ? (option === questions[currentQuestionIndex].correctAnswer ? 'bg-green-300' : 'bg-red-300') : ''}`}
+                          className={`text-center text-sm sm:text-base md:text-lg lg:text-md xl:text-base w-full sm:w-3/4 md:w-1/2 lg:w-1/3 mb-2 border p-2 rounded hover:bg-blue-200 ${isSelected ? (option === questions[currentQuestionIndex].correctAnswer ? 'bg-green-300' : 'bg-red-300') : ''}`}
                         >
                           {String.fromCharCode(65 + i)}. {option}
                         </button>
                       );
                     })}
                   </div>
-                  <button
-                    className={`w-full bg-blue-500 p-2 rounded ${isNextDisabled ? ' opacity-50 cursor-not-allowed ' : 'opacity-100 '}`}
+
+                  {/* Uncomment this code to display next and submit button to move to next questions. */}
+                  {/* <button
+                    className={`text-center w-full bg-blue-500 text-white p-2 rounded ${isNextDisabled ? ' opacity-50 cursor-not-allowed ' : 'opacity-100 '}`}
                     disabled={isNextDisabled}
                   >
                     {currentQuestionIndex === questions.length - 1 ? 'Submit' : 'Next'}
-                  </button>
+                  </button> */}
                 </div>
               </>
             )}
@@ -167,11 +185,11 @@ const HostScreen = () => {
         )}
 
         {gameFinished && (
-          <div className="w-full text-center mt-2">
-            <p>
+          <div className="w-full text-center mt-2 sm:mt-4 md:mt-6">
+            <p className='text-sm sm:text-base md:text-lg'>
               {playerName} has attempted {questions.length}/{questions.length} questions.
             </p>
-            <p>
+            <p className="text-sm sm:text-base md:text-lg">
               with <strong>{correctCount}</strong> correct answers.
             </p>
           </div>

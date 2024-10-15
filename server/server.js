@@ -60,8 +60,6 @@ async function fetchQuestionsFromAPI() {
   }
 }
 
-
-
 // Handle socket connections
 io.on('connection', (socket) => {
   console.log('A new client connected:', socket.id);
