@@ -163,7 +163,7 @@ const HostScreen = () => {
                       return (
                         <button
                           key={i}
-                          className={`text-center text-sm sm:text-base md:text-lg lg:text-md xl:text-base w-full sm:w-3/4 md:w-1/2 lg:w-1/3 mb-2 border p-2 rounded hover:bg-blue-200 ${isSelected ? (option === questions[currentQuestionIndex].correctAnswer ? 'bg-green-300' : 'bg-red-300') : ''}`}
+                          className={`text-center text-sm sm:text-base md:text-lg lg:text-md xl:text-base w-full mb-2 border p-2 rounded hover:bg-blue-200 ${isSelected ? (option === questions[currentQuestionIndex].correctAnswer ? 'bg-green-300' : 'bg-red-300') : ''}`}
                         >
                           {String.fromCharCode(65 + i)}. {option}
                         </button>
